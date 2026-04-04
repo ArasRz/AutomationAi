@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Pytest
+.pytest_cache/
+
+# Playwright screenshots
+screenshot_*.png
+
+# Miljövariabler (känslig info som lösenord)
+.env
+
+# MacOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
