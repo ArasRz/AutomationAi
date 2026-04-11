@@ -8,10 +8,56 @@ on:
     branches: [main]       # Vid varje pull request mot main
 
 jobs:
-  tester:
-    runs-on: ubuntu-latest  # GitHub kör testerna på en Ubuntu-server
 
-    # Matrix-strategi: kör Selenium och Playwright parallellt
+  # ─────────────────────────────────────────────
+  # ENHETSTESTER — körs på ALLA pull requests och pushar
+  # Snabba tester utan webbläsare, ger snabb feedback
+  # ─────────────────────────────────────────────
+  enhetstester:
+    name: Enhetstester
+    runs-on: ubuntu-latest
+
+    steps:
+      # Steg 1: Hämta ner koden från GitHub
+      - name: Hämta kod
+        uses: actions/checkout@v4
+
+      # Steg 2: Installera Python
+      - name: Sätt upp Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      # Steg 3: Installera beroenden
+      - name: Installera beroenden
+        run: pip install -r requirements.txt
+
+      # Steg 4: Kör enhetstester och generera HTML-rapport
+      - name: Kör enhetstester
+        run: |
+          pytest lektion3_testramverk_cicd/test_unit.py \
+                 -v --html=rapport_enhet.html --self-contained-html
+
+      # Steg 5: Publicera rapporten som artefakt
+      - name: Publicera enhetstest-rapport
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rapport-enhetstester
+          path: rapport_enhet.html
+
+
+  # ─────────────────────────────────────────────
+  # INTEGRATIONSTESTER — körs BARA vid push till main
+  # Tyngre tester med webbläsare, körs parallellt via matrix
+  # ─────────────────────────────────────────────
+  integrationstester:
+    name: Integrationstester (${{ matrix.test-suite }})
+    runs-on: ubuntu-latest
+
+    # Villkor: kör bara vid push till main, inte på pull requests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
     strategy:
       matrix:
         test-suite: [selenium, playwright]
@@ -27,7 +73,7 @@ jobs:
         with:
           python-version: "3.13"
 
-      # Steg 3: Installera alla Python-paket från requirements.txt
+      # Steg 3: Installera beroenden
       - name: Installera beroenden
         run: pip install -r requirements.txt
 
@@ -36,7 +82,7 @@ jobs:
         if: matrix.test-suite == 'playwright'
         run: playwright install chromium
 
-      # Steg 5a: Kör Selenium-testerna och spara rapport
+      # Steg 5a: Kör Selenium-tester och generera HTML-rapport
       - name: Kör Selenium-tester
         if: matrix.test-suite == 'selenium'
         run: |
@@ -44,17 +90,17 @@ jobs:
                  lektion2_selenium_playwright/tests/test_login_pom.py \
                  -v --html=rapport_selenium.html --self-contained-html
 
-      # Steg 5b: Kör Playwright-testerna och spara rapport
+      # Steg 5b: Kör Playwright-tester och generera HTML-rapport
       - name: Kör Playwright-tester
         if: matrix.test-suite == 'playwright'
         run: |
           pytest lektion2_selenium_playwright/test_playwright_login.py \
                  -v --html=rapport_playwright.html --self-contained-html
 
-      # Steg 6: Ladda upp rapporten så du kan ladda ned den från GitHub
-      - name: Ladda upp testrapport
+      # Steg 6: Publicera rapporten som artefakt
+      - name: Publicera integrationstest-rapport
         uses: actions/upload-artifact@v4
-        if: always()   # Kör även om testerna misslyckas
+        if: always()
         with:
-          name: testrapport-${{ matrix.test-suite }}
+          name: rapport-${{ matrix.test-suite }}
           path: rapport_*.html
