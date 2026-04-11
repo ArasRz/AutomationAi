@@ -1,0 +1,60 @@
+name: Testautomation CI
+
+# När ska pipelinen köras?
+on:
+  push:
+    branches: [main]       # Vid varje push till main
+  pull_request:
+    branches: [main]       # Vid varje pull request mot main
+
+jobs:
+  tester:
+    runs-on: ubuntu-latest  # GitHub kör testerna på en Ubuntu-server
+
+    # Matrix-strategi: kör Selenium och Playwright parallellt
+    strategy:
+      matrix:
+        test-suite: [selenium, playwright]
+
+    steps:
+      # Steg 1: Hämta ner koden från GitHub
+      - name: Hämta kod
+        uses: actions/checkout@v4
+
+      # Steg 2: Installera Python
+      - name: Sätt upp Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      # Steg 3: Installera alla Python-paket från requirements.txt
+      - name: Installera beroenden
+        run: pip install -r requirements.txt
+
+      # Steg 4: Installera Playwright-webbläsare (bara för Playwright-jobbet)
+      - name: Installera Playwright-webbläsare
+        if: matrix.test-suite == 'playwright'
+        run: playwright install chromium
+
+      # Steg 5a: Kör Selenium-testerna och spara rapport
+      - name: Kör Selenium-tester
+        if: matrix.test-suite == 'selenium'
+        run: |
+          pytest lektion2_selenium_playwright/test_selenium_login.py \
+                 lektion2_selenium_playwright/tests/test_login_pom.py \
+                 -v --junit-xml=rapport_selenium.xml
+
+      # Steg 5b: Kör Playwright-testerna och spara rapport
+      - name: Kör Playwright-tester
+        if: matrix.test-suite == 'playwright'
+        run: |
+          pytest lektion2_selenium_playwright/test_playwright_login.py \
+                 -v --junit-xml=rapport_playwright.xml
+
+      # Steg 6: Ladda upp rapporten så du kan ladda ned den från GitHub
+      - name: Ladda upp testrapport
+        uses: actions/upload-artifact@v4
+        if: always()   # Kör även om testerna misslyckas
+        with:
+          name: testrapport-${{ matrix.test-suite }}
+          path: rapport_*.xml
