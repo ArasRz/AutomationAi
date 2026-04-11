@@ -42,14 +42,14 @@ jobs:
         run: |
           pytest lektion2_selenium_playwright/test_selenium_login.py \
                  lektion2_selenium_playwright/tests/test_login_pom.py \
-                 -v --junit-xml=rapport_selenium.xml
+                 -v --html=rapport_selenium.html --self-contained-html
 
       # Steg 5b: Kör Playwright-testerna och spara rapport
       - name: Kör Playwright-tester
         if: matrix.test-suite == 'playwright'
         run: |
           pytest lektion2_selenium_playwright/test_playwright_login.py \
-                 -v --junit-xml=rapport_playwright.xml
+                 -v --html=rapport_playwright.html --self-contained-html
 
       # Steg 6: Ladda upp rapporten så du kan ladda ned den från GitHub
       - name: Ladda upp testrapport
@@ -57,4 +57,4 @@ jobs:
         if: always()   # Kör även om testerna misslyckas
         with:
           name: testrapport-${{ matrix.test-suite }}
-          path: rapport_*.xml
+          path: rapport_*.html

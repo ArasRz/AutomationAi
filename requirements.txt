@@ -1,4 +1,5 @@
 pytest
+pytest-html
 selenium
 webdriver-manager
 playwright
