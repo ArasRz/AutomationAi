@@ -4,6 +4,7 @@
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "lektion2_selenium_playwright"))
 
 from lektion2_selenium_playwright.pages.selenium_login_page import LoginPage
 from lektion2_selenium_playwright.pages.dashboard_page import DashboardPage
